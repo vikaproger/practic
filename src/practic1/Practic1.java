@@ -58,10 +58,8 @@ public class Practic1 {
                 Y0 = yuv[0];             
                 Y[i][j] = Y0;
             }
-        }
-        
-        
-        
+        }     
+                
         resultY = process(Y,resultY.length, resultY[0].length, coef);        
         printRes(resultY, "outputY.txt");// сохраняем результат в файл
         
@@ -143,6 +141,7 @@ public class Practic1 {
       yuv[1] = u;
       yuv[2] = v;
     }
+    
     public static double[][] cosKoef(int coef){
         double[][] cos = new double[cnst][cnst];
         for (int i = 0; i < coef; i++) { 
@@ -213,7 +212,7 @@ public class Practic1 {
     }
     
     public static int[][] applyIDCT(int matrix[][], int coef) {
-        int[][] dct = new int[cnst][cnst];
+        int[][] idct = new int[cnst][cnst];
         double[][] cos = cosKoef(coef);
         double ci, cj, sum;
         for (int i=0;i<cnst;i++) {
@@ -233,10 +232,10 @@ public class Practic1 {
                 sum+=(ci*cj)/4.0*cos[i][u]*cos[j][v]*matrix[u][v];
               }
             }
-            dct[i][j]=(int)sum;
+            idct[i][j]=(int)sum;
           }
         }
-        return dct;
+        return idct;
     }
     
     public static int[][] check(int w, int h, int coef) throws IOException{
@@ -247,7 +246,7 @@ public class Practic1 {
         for(int i = 0; i <check.length; i+=cnst){
             for(int j = 0; j <check[0].length; j+=cnst){
                 mas = clonePartArray(check, i,j);// копируем в mas блок 8х8
-                masIdct = applyIDCT(mas, coef);// применяем ДКП к блоку 8х8
+                masIdct = applyIDCT(mas, coef);// применяем обратное ДКП к блоку 8х8
                 result = cloneArray(masIdct,result, i, j );// сохраняем результат в большой массив
             }
         }
@@ -265,8 +264,5 @@ public class Practic1 {
       rgb[0] = clip(r);
       rgb[1] = clip(g);
       rgb[2] = clip(b);
-    }
-    
+    }    
 }
-    
-

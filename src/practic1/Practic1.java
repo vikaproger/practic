@@ -285,9 +285,9 @@ public class Practic1 {
         for(int i = 0; i <check.length; i+=cnst){
             for(int j = 0; j <check[0].length; j+=cnst){
                 mas = clonePartArray(check, i,j);// копируем в mas блок 8х8
-                masIdct = applyIDCT(mas, coef);// применяем ДКП к блоку 8х8
-                masQuan = unquant(masIdct, quanCoef);
-                result = cloneArray(masQuan,result, i, j );// сохраняем результат в большой массив
+                masQuan = unquant(mas, quanCoef);
+                masIdct = applyIDCT(masQuan, coef);// применяем ДКП к блоку 8х8
+                result = cloneArray(masIdct,result, i, j );// сохраняем результат в большой массив
             }
         }
         return result;

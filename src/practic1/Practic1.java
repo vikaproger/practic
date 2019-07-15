@@ -33,7 +33,7 @@ public class Practic1 {
      */
     public static void main(String[] args) throws IOException {
         // TODO code application logic here
-        File file = new File("im6.jpg");
+        File file = new File("im3.jpg");
         BufferedImage image = ImageIO.read(file);
         BufferedImage imageFiltered = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
         
@@ -58,8 +58,10 @@ public class Practic1 {
                 Y0 = yuv[0];             
                 Y[i][j] = Y0;
             }
-        }     
-                
+        }
+        
+        
+        
         resultY = process(Y,resultY.length, resultY[0].length, coef);        
         printRes(resultY, "outputY.txt");// сохраняем результат в файл
         
@@ -82,11 +84,15 @@ public class Practic1 {
         int[][] result = new int[w][h];
         int[][] mas;//массив для хранения блока 8х8
         int[][] masDct;//массив для хранения блока 8х8 после ДКП
+        int[][] masQuan;
+        int[][]quanCoef = quantCoef(coef);
+        
         for(int i = 0; i <YUV.length; i+=cnst){
             for(int j = 0; j <YUV[0].length; j+=cnst){
                 mas = clonePartArray(YUV, i,j);// копируем в mas блок 8х8
                 masDct = dctTransform(mas, coef);// применяем ДКП к блоку 8х8
-                result = cloneArray(masDct,result, i, j );// сохраняем результат в большой массив
+                masQuan = quant(masDct, quanCoef);
+                result = cloneArray(masQuan,result, i, j );// сохраняем результат в большой массив
             }
         }
         return result;
@@ -134,24 +140,53 @@ public class Practic1 {
     public static void rgb2yuv(int r, int g, int b, int[] yuv) {
       int y, u, v;
       y = ((r *  39191 + g *  76939 + b *  14942) >> 17);
-      u = 128;
-      v = 128;
+//      u = 128;
+//      v = 128;
+      u =(((r * -22117 + g * -43419 + b *  65536) >> 17) + 128);
+      v =(((r *  65536 + g * -54878 + b * -10658) >> 17) + 128);
       
       yuv[0] =  clip(y);
-      yuv[1] = u;
-      yuv[2] = v;
+      yuv[1] = clip(u);
+      yuv[2] = clip(v);
     }
     
-    public static double[][] cosKoef(int coef){
-        double[][] cos = new double[cnst][cnst];
-        for (int i = 0; i < coef; i++) { 
-            for (int j = 0; j < coef; j++) { 
-                cos[i][j] = Math.cos((2*i+1)*j*Math.PI/(2*cnst));
+    public static int[][] quantCoef(int coef){
+        int[][] quan = new int[cnst][cnst];
+        for (int y = 0; y < cnst; y++){
+            for (int x = 0; x < cnst; x++){
+                quan[x][y] = 1 + ((1 + x +y) * coef);    
+            
             }
         }
-        for (int i = coef; i < cnst; i++) { 
-            for (int j = coef; j < cnst; j++) {
-                cos[i][j] = 0;
+        return quan;
+    }
+    
+    public static int[][] quant(int[][] mas, int[][] quan){
+        for (int i = 0; i< cnst; i++){
+            for (int j = 0; j< cnst; j++){
+                mas[i][j] /= quan[i][j];
+                if (Math.abs(mas[i][j])<1)
+                     mas[i][j] =0;
+            }
+        }
+        return mas;
+    }
+    
+    public static int[][] unquant(int[][] mas, int[][] quan){
+        for (int i = 0; i< cnst; i++){
+            for (int j = 0; j< cnst; j++){
+                mas[i][j] *= quan[i][j];
+            }
+        }
+        return mas;
+    }
+    
+    public static double[][] cosKoef(){
+        //double[][] cos = new double[cnst][cnst];
+        double[][] cos = new double[cnst][cnst];
+        for (int i = 0; i < cnst; i++) { 
+            for (int j = 0; j < cnst; j++) { 
+                cos[i][j] = Math.cos((2*i+1)*j*Math.PI/(2*cnst));
             }
         }
         return cos;
@@ -160,7 +195,7 @@ public class Practic1 {
     public static int[][] dctTransform(int matrix[][], int coef) { 
         int i, j, u, v; 
         int[][] dct = new int[cnst][cnst]; // массив для хранения коэффициентво ДКП
-        double[][] cos = cosKoef(coef);
+        double[][] cos = cosKoef();
         double ci, cj, sum; 
 
         for (u = 0; u < cnst; u++) { 
@@ -212,8 +247,8 @@ public class Practic1 {
     }
     
     public static int[][] applyIDCT(int matrix[][], int coef) {
-        int[][] idct = new int[cnst][cnst];
-        double[][] cos = cosKoef(coef);
+        int[][] dct = new int[cnst][cnst];
+        double[][] cos = cosKoef();
         double ci, cj, sum;
         for (int i=0;i<cnst;i++) {
           for (int j=0;j<cnst;j++) {
@@ -232,22 +267,27 @@ public class Practic1 {
                 sum+=(ci*cj)/4.0*cos[i][u]*cos[j][v]*matrix[u][v];
               }
             }
-            idct[i][j]=(int)sum;
+            dct[i][j]=(int)sum;
           }
         }
-        return idct;
+        return dct;
     }
     
     public static int[][] check(int w, int h, int coef) throws IOException{
         int[][] check = loadArrayFromFile("outputY.txt",w,h);
         int[][] mas;//массив для хранения блока 8х8
         int[][] masIdct;//массив для хранения блока 8х8 после обратного ДКП
+        int[][] masQuan;
         int[][] result = new int[w][h];
+        int[][]quanCoef = quantCoef(coef);
+        
+        
         for(int i = 0; i <check.length; i+=cnst){
             for(int j = 0; j <check[0].length; j+=cnst){
                 mas = clonePartArray(check, i,j);// копируем в mas блок 8х8
-                masIdct = applyIDCT(mas, coef);// применяем обратное ДКП к блоку 8х8
-                result = cloneArray(masIdct,result, i, j );// сохраняем результат в большой массив
+                masIdct = applyIDCT(mas, coef);// применяем ДКП к блоку 8х8
+                masQuan = unquant(masIdct, quanCoef);
+                result = cloneArray(masQuan,result, i, j );// сохраняем результат в большой массив
             }
         }
         return result;
@@ -264,5 +304,8 @@ public class Practic1 {
       rgb[0] = clip(r);
       rgb[1] = clip(g);
       rgb[2] = clip(b);
-    }    
+    }
+    
 }
+    
+
